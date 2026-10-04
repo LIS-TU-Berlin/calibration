@@ -1,0 +1,97 @@
+%% data files
+data/
+tensorboard/
+*.mp4
+*.h5
+
+%% compile temporaries
+build/
+*.pdf
+*.o
+*.a
+*.so
+*.swp
+callgrind.out.*
+MUJOCO_LOG.TXT
+
+errcmaes.err
+actparcmaes.par
+
+%% EXECUTABLE
+*.exe
+
+%% IDE temporaries
+.vscode
+*.kdev4
+vc60.idb
+.*.config
+.*.creator
+.*.creator.user*
+.*.files
+.*.includes
+.*.cflags
+.*.cxxflags
+.env
+.idea
+*.egg-info
+
+.cproject
+.project
+*eclipse*
+
+tags
+.cccc
+
+*.orig
+
+# PYTHON
+*.pyc
+.ipynb_checkpoints
+.venv/*
+__pycache__/
+
+# EXECUTION
+core
+CORE
+*.log
+logs/
+**/runs/
+res/
+**/outputs/
+prof.out
+wandb/
+
+%% BACKUP/temporary files
+*.tmp
+*.dat
+nogit*
+*~
+z.*
+z/
+rai.log
+.#*#
+.#*
+#*#
+temp/*
+
+
+%% MAKE
+Makefile.dep
+Make.lock
+.lastMake
+makefile
+
+
+%% CMAKE
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+CMakeLists.txt.user
+CTestTestfile.cmake
+
+%% Denis
+checkpoints/
+.claude/
+markdowns/
+
+tensorboard/
