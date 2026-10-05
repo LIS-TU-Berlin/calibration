@@ -1,6 +1,7 @@
 %% data files
 data/
 tensorboard/
+tmp/
 *.mp4
 *.h5
 
