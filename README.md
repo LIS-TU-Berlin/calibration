@@ -2,7 +2,7 @@
 
 <img src="./docs/assets/lis.png" alt="LIS logo" align="right" width="100" style="margin-left: 20px;">
 
-The `calib.py` is the main calibration tool.
+The `main.py` is the main calibration tool.
 It provides options for
 1. Data collection, namely charuco board and franka data for intrinsic/extrinsic calibration.
 1. Intrinsic calibration (just calling opencv -- could be done equivalently directly in python)
@@ -100,9 +100,23 @@ Run with more verbose to check images and charuco detections.
 1. Setup the scene config file, with cams, arucos, roughly positions. Use `ry-view` and `scene_info` to check.
 1. Use `ry-view-baslers` to run cams (TODO: add option to continuously show charuco boards and/or aruco markers). Ensure framerate around 60Hz.
 1. Position cameras. Upright. Aperture (Blende) not too bright (reduces Tiefenschärfe). Properly focus on center object.
-1. Collect charuco board data using `collect-board-data.py`
-1. Calibrate intrinsics.
-1. Collect franka calib data using `collect-calib-data.py`
-1. Calibrate using `komo_calibrate`.
+1. Collect charuco board data
+```
+python3.py main.py -collect_board
+```
+1. Calibrate intrinsics
+```
+python3.py main.py -intrinsic
+```
+1. Collect franka calib data
+```
+python3.py main.py -collect_franka
+```
+1. Calibrate extrinsics and robot joints
+```
+python3.py main.py -extrinsic
+```
 1. Check with overlaying rendered and undistored images.
-
+```
+python3.py main.py -overlay
+```

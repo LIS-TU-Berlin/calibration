@@ -1,28 +1,47 @@
 #!/usr/bin/env python3
 
+import os
 import argparse
 
 import cv2
 import numpy as np
 import robotic as ry
+from pathlib import Path
 
 from calib.calibration_scene import CalibrationScene
 from calib.cam_view import cam_view
 from calib.collect_data import collect_data
 
 
-def load_images(path, T, C):
+def load_images(path, C):
+    T = sum(1 for f in os.listdir(path) if f.lower().endswith(".png")) // 4
     imgs = np.empty((T, C), dtype=object)
     for t in range(T):
         for c in range(C):
             filename = f"{path}/img_{t:04d}_{c}.png"
             print("loading:", filename)
-            imgs[t, c] = cv2.imread(filename)
+            imgs[t, c] = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
     return imgs
+
+def move_calib_files():
+    os.makedirs("scenes/calib", exist_ok=True)
+
+    files = ["arucos", "cams", "joints", "box"]
+
+    for file in files:
+        src = Path(f"calib_{file}.yml")
+        dst = Path(f"scenes/calib/{file}.yml")
+        if src.exists(): src.rename(dst)
+
+    src = Path(f"calib_cams_intrinsics.yml")
+    dst = Path(f"scenes/cams_intrinsics.yml")
+    if src.exists(): src.rename(dst)
 
 
 def main():
     parser = argparse.ArgumentParser(description="Utility view baslers")
+
+    # Mode
     parser.add_argument("-view", help="view camera images", action="store_true")
     parser.add_argument("-collect_board", help="collect board data", action="store_true")
     parser.add_argument("-collect_franka", help="collect data with the franka moving to cams", action="store_true")
@@ -34,6 +53,7 @@ def main():
         action="store_true",
     )
 
+    # Params
     parser.add_argument("-ncams", type=int, help="number of cams", nargs="?", default=4)
     args = parser.parse_args()
 
@@ -41,30 +61,33 @@ def main():
         cam_view(args.ncams, True)
 
     elif args.collect_board:
+        path = "data/board"
         C = ry.Config()
-        C.addFile("scenes/station.yml")
+        C.addFile("scenes/scene_init.yml")
         C.view(False, 'loaded scene')
         S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=False, real=True)
+        collect_data(C, S, use_franka=False, data_path=path)
 
     elif args.collect_franka:
+        path = "data/franka"
         C = ry.Config()
-        C.addFile("scenes/station.yml")
+        C.addFile("scenes/scene_init.yml")
         C.view(False, 'loaded scene')
         S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=True, real=True)
+        collect_data(C, S, use_franka=True, data_path=path)
 
     elif args.intrinsic:
         path = "data/board"
-        imgs = load_images(path, 30, 4)  # TODO: should know from files how many images
+        imgs = load_images(path, 4)
         Fxycxy, Distortion = ry.calib.calibrate_intrinsics(imgs, distortionDofs=2, verbose=2)
         print("INTRINSICS:\n", Fxycxy, Distortion)
+        move_calib_files()
 
     elif args.extrinsic:
         path = "data/franka"
         C = ry.Config()
-        C.addFile("scenes/station.yml")
-        imgs = load_images(path, 50, 4)
+        C.addFile("scenes/scene_init.yml")
+        imgs = load_images(path, 4)
         ids, pts = ry.calib.detect_arucos(imgs, verbose=5)
         qs = np.loadtxt(f"{path}/q_arr.txt")
         qs = qs[: imgs.shape[0], :]
@@ -74,7 +97,7 @@ def main():
             ids,
             pts,
             qs,
-            exclude_times=[33, 48, 29, 28, 49, 43, 32],
+            exclude_times=[],
             calibrate_cams=True,
             calibrate_arucos=True,
             calibrate_joints=True,
@@ -82,13 +105,14 @@ def main():
             calib_joint_regularization=1e1,
             verbose=2,
         )
-        return imgs, qs
+
+        move_calib_files()
 
     elif args.overlay:
         path = "data/franka"
         C = ry.Config()
-        C.addFile("scenes/station.yml")
-        imgs = load_images(path, 20, 4)
+        C.addFile("scenes/scene_calib.yml")
+        imgs = load_images(path, 4)
         qs = np.loadtxt(f"{path}/q_arr.txt")
 
         undistored = ry.calib.undistort_images(C, imgs)

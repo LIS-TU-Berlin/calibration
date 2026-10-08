@@ -1,3 +1,4 @@
+import os
 import time
 
 import cv2
@@ -7,7 +8,9 @@ import robotic as ry
 from .calibration_scene import CalibrationScene
 
 
-def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, real=True):
+def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path="data/"):
+
+    os.makedirs(data_path, exist_ok=True)
     ry.set_params({"botsim/verbose": 0, "bot/useAudio": True})
 
     V = ry.ImageViewer()
@@ -67,12 +70,14 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, real=True)
         key = V.view(rgb, zoom=0.4)
 
         for c in range(ncams):
-            cv2.imwrite(f"data/img_{t:04d}_{c}.png", rgbs[c])
+            path = os.path.join(data_path, f"img_{t:04d}_{c}.png")
+            cv2.imwrite(path, cv2.cvtColor(rgbs[c], cv2.COLOR_RGB2BGR))
 
         t += 1
 
     Q = np.stack(Q)
-    np.savetxt("data/q_arr.txt", Q)
+    path = os.path.join(data_path, "q_arr.txt")
+    np.savetxt(path, Q)
 
-    if real:
+    if use_franka:
         bot.home(C)

@@ -1,0 +1,6 @@
+Include: <station.yml>
+
+Include: <cams_intrinsics.yml>
+Include: <init/cams.yml>
+Include: <init/arucos.yml>
+Include: <init/joints.yml>

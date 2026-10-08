@@ -96,7 +96,7 @@ camera_2(table): {
 }
 
 camera_3(table): {
-  basler: 419585xx,
+  basler: 41958512,
   # Q: "t(0.9 -0.8 0.2) d(-110 1 0 0) d(-20 0 1 0)"
   Q: [0.951051, -0.77357, 0.371706, 0.583462, -0.793828, -0.142795, 0.0949666],
   shape: marker, size: [.1],
@@ -120,8 +120,3 @@ Edit cam0_basler(camera_0): {}
 Edit cam1_basler(camera_1): {}
 Edit cam2_basler(camera_2): {}
 Edit cam3_basler(camera_3): {}
-        
-Include: <calib_cams_intrinsics.yml>
-Include: <calib_cams.yml>
-Include: <calib_arucos.yml>
-Include: <calib_joints.yml>
