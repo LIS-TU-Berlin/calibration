@@ -104,6 +104,7 @@ Run with more verbose to check images and charuco detections.
 ```
 python3.py main.py -collect_board
 ```
+Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate intrinsics
 ```
 python3.py main.py -intrinsic
@@ -112,6 +113,7 @@ python3.py main.py -intrinsic
 ```
 python3.py main.py -collect_franka
 ```
+Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate extrinsics and robot joints
 ```
 python3.py main.py -extrinsic
