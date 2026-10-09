@@ -52,6 +52,7 @@ def main():
         help="overlay rendered images on the collected franka data to check calibration",
         action="store_true",
     )
+    parser.add_argument("-track", help="track the black cube for testing", action="store_true")
 
     # Params
     parser.add_argument("-ncams", type=int, help="number of cams", nargs="?", default=4)
@@ -97,7 +98,7 @@ def main():
             ids,
             pts,
             qs,
-            exclude_times=[],
+            exclude_times=[22, 10, 20, 42], #todo make this list a cmd line argument
             calibrate_cams=True,
             calibrate_arucos=True,
             calibrate_joints=True,
@@ -122,6 +123,20 @@ def main():
         for t in range(imgs.shape[0]):
             for c in range(imgs.shape[1]):
                 V.view(undistored[t, c] / 4 * 3 + rendered[t, c] / 4, True, zoom=1.0)
+
+    elif args.track:
+        C = ry.Config()
+        C.addFile("scenes/scene_cube.yml")
+
+        bot = ry.BotOp(C, False, False)
+        bot.launch_baslers([str(i) for i in range(4)], [])
+        bot.launch_arucos()
+        bot.launch_arucoObjTracker(C, "obj")
+
+        while(True):
+                key = bot.sync(C, .05)
+                if key==ord('q'):
+                        break
 
     else:
         parser.print_help()
