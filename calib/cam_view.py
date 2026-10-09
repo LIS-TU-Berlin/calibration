@@ -9,11 +9,11 @@ from .aruco_detector import ArucoDetector
 def cam_view(ncams, draw_arucos=False, draw_charuco=False):
     ry.set_params({"botsim/verbose": 0})
 
-    cam_list = [f'{i}' for i in range(ncams)]
-    bot.launch_baslers(cam_list, [])
-
     C = ry.Config()
     bot = ry.BotOp(C, False, False)
+
+    cam_list = [f'{i}' for i in range(ncams)]
+    bot.launch_baslers(cam_list, [])
 
     V = ry.ImageViewer()
     A = ArucoDetector(detect_board=draw_charuco, verbose=1)
@@ -24,7 +24,7 @@ def cam_view(ncams, draw_arucos=False, draw_charuco=False):
         rgbs = []
         for c in range(ncams):
             rgb = bot.getImage(f'camera_{c}')
-            if draw_arucos:
+            if draw_arucos and c==0:
                 A.step(rgb, draw_markers=True)
             rgbs.append(rgb)
             rgb = np.hstack(rgbs)
