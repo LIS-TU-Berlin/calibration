@@ -8,17 +8,17 @@ import robotic as ry
 from .calibration_scene import CalibrationScene
 
 
-def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path="data/"):
+def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path="data/", ncams=None):
 
     os.makedirs(data_path, exist_ok=True)
     ry.set_params({"botsim/verbose": 0, "bot/useAudio": True})
 
     V = ry.ImageViewer()
-    ncams = len(S.basler_ids)
-    cam_list = [f"{i}" for i in range(ncams)]
+    baslers = S.baslers[:ncams]
+    ncams = len(baslers)
 
     bot = ry.BotOp(C, True, False)
-    bot.launch_baslers(cam_list, [])
+    bot.launch_baslers(baslers)
 
     if use_franka:
         bot.launch_franka("172.17.0.2", C.getFrame("r_panda_base"))  # TODO: works only for right panda...
@@ -45,7 +45,7 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path=
                 rgbs = []
                 for c in range(ncams):
                     rgbs.append(bot.getImage(f"camera_{c}"))
-                rgb = np.hstack(rgbs)
+                rgb = np.vstack(rgbs)
                 key = V.view(rgb, zoom=0.4)
                 if key == ord("q"):
                     stop = True

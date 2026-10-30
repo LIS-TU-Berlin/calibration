@@ -4,30 +4,33 @@ import numpy as np
 import robotic as ry
 
 from .aruco_detector import ArucoDetector
+from .calibration_scene import CalibrationScene
 
 
-def cam_view(ncams, draw_arucos=False, draw_charuco=False):
+def cam_view(scene_file, ncams, draw_arucos=False, draw_charuco=False):
     ry.set_params({"botsim/verbose": 0})
 
     C = ry.Config()
+    C.addFile(scene_file)
+    S = CalibrationScene(C, None)
     bot = ry.BotOp(C, False, False)
 
-    cam_list = [f'{i}' for i in range(ncams)]
-    bot.launch_baslers(cam_list, [])
+    baslers = S.baslers[:ncams]
+    ncams = len(baslers)
+    bot.launch_baslers(baslers)
 
     V = ry.ImageViewer()
-    A = ArucoDetector(detect_board=draw_charuco, verbose=1)
+    A = ArucoDetector(detect_board=draw_charuco, verbose=0)
 
     while True:
         time.sleep(.025)
 
-        rgbs = []
-        for c in range(ncams):
-            rgb = bot.getImage(f'camera_{c}')
-            if draw_arucos and c==0:
-                A.step(rgb, draw_markers=True)
-            rgbs.append(rgb)
-            rgb = np.hstack(rgbs)
+        rgbs = [bot.getImage(f'camera_{c}') for c in range(ncams)]
+        if any(rgb.ndim != 3 for rgb in rgbs):  # cams not streaming yet
+            continue
+        if draw_arucos or draw_charuco:
+            rgbs = [A.draw(rgb) for rgb in rgbs]
+        rgb = np.vstack(rgbs)
 
         key = V.view(rgb, zoom=0.35)
         if key==ord('q'):

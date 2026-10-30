@@ -13,8 +13,10 @@ from calib.cam_view import cam_view
 from calib.collect_data import collect_data
 
 
-def load_images(path, C):
-    T = sum(1 for f in os.listdir(path) if f.lower().endswith(".png")) // 4
+def load_images(path):
+    files = [f for f in os.listdir(path) if f.startswith("img_") and f.lower().endswith(".png")]
+    C = 1 + max(int(f[:-4].split("_")[2]) for f in files)
+    T = len(files) // C
     imgs = np.empty((T, C), dtype=object)
     for t in range(T):
         for c in range(C):
@@ -23,18 +25,18 @@ def load_images(path, C):
             imgs[t, c] = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
     return imgs
 
-def move_calib_files():
-    os.makedirs("scenes/calib", exist_ok=True)
+def move_calib_files(scene_dir):
+    os.makedirs(f"{scene_dir}/calib", exist_ok=True)
 
     files = ["arucos", "cams", "joints", "box"]
 
     for file in files:
         src = Path(f"calib_{file}.yml")
-        dst = Path(f"scenes/calib/{file}.yml")
+        dst = Path(f"{scene_dir}/calib/{file}.yml")
         if src.exists(): src.rename(dst)
 
     src = Path(f"calib_cams_intrinsics.yml")
-    dst = Path(f"scenes/cams_intrinsics.yml")
+    dst = Path(f"{scene_dir}/cams_intrinsics.yml")
     if src.exists(): src.rename(dst)
 
 
@@ -53,42 +55,47 @@ def main():
         action="store_true",
     )
     parser.add_argument("-track", help="track the black cube for testing", action="store_true")
+    parser.add_argument("-board", help="with -view: show charuco board detections (corner count green = usable for -intrinsic)", action="store_true")
 
     # Params
-    parser.add_argument("-ncams", type=int, help="number of cams", nargs="?", default=4)
+    parser.add_argument("-ncams", type=int, help="number of cams (default: all in the scene)", nargs="?", default=None)
+    parser.add_argument("-setup", help="station (scenes/, data/) or e.g. trossen (scenes/trossen/, data/trossen/)", default="station")
     args = parser.parse_args()
 
+    scene_dir = "scenes" if args.setup == "station" else f"scenes/{args.setup}"
+    data_dir = "data" if args.setup == "station" else f"data/{args.setup}"
+
     if args.view:
-        cam_view(args.ncams, True)
+        cam_view(f"{scene_dir}/scene_init.yml", args.ncams, draw_arucos=not args.board, draw_charuco=args.board)
 
     elif args.collect_board:
-        path = "data/board"
+        path = f"{data_dir}/board"
         C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
+        C.addFile(f"{scene_dir}/scene_init.yml")
         C.view(False, 'loaded scene')
         S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=False, data_path=path)
+        collect_data(C, S, use_franka=False, data_path=path, ncams=args.ncams)
 
     elif args.collect_franka:
-        path = "data/franka"
+        path = f"{data_dir}/franka"
         C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
+        C.addFile(f"{scene_dir}/scene_init.yml")
         C.view(False, 'loaded scene')
         S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=True, data_path=path)
+        collect_data(C, S, use_franka=True, data_path=path, ncams=args.ncams)
 
     elif args.intrinsic:
-        path = "data/board"
-        imgs = load_images(path, 4)
+        path = f"{data_dir}/board"
+        imgs = load_images(path)
         Fxycxy, Distortion = ry.calib.calibrate_intrinsics(imgs, distortionDofs=2, verbose=2)
         print("INTRINSICS:\n", Fxycxy, Distortion)
-        move_calib_files()
+        move_calib_files(scene_dir)
 
     elif args.extrinsic:
-        path = "data/franka"
+        path = f"{data_dir}/franka"
         C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
-        imgs = load_images(path, 4)
+        C.addFile(f"{scene_dir}/scene_init.yml")
+        imgs = load_images(path)
         ids, pts = ry.calib.detect_arucos(imgs, verbose=5)
         qs = np.loadtxt(f"{path}/q_arr.txt")
         qs = qs[: imgs.shape[0], :]
@@ -107,13 +114,13 @@ def main():
             verbose=2,
         )
 
-        move_calib_files()
+        move_calib_files(scene_dir)
 
     elif args.overlay:
-        path = "data/franka"
+        path = f"{data_dir}/franka"
         C = ry.Config()
-        C.addFile("scenes/scene_calib.yml")
-        imgs = load_images(path, 4)
+        C.addFile(f"{scene_dir}/scene_calib.yml")
+        imgs = load_images(path)
         qs = np.loadtxt(f"{path}/q_arr.txt")
 
         undistored = ry.calib.undistort_images(C, imgs)
@@ -126,10 +133,10 @@ def main():
 
     elif args.track:
         C = ry.Config()
-        C.addFile("scenes/scene_cube.yml")
+        C.addFile(f"{scene_dir}/scene_cube.yml")
 
         bot = ry.BotOp(C, False, False)
-        bot.launch_baslers([str(i) for i in range(4)], [])
+        bot.launch_baslers(CalibrationScene(C, None).baslers)
         bot.launch_arucos()
         bot.launch_arucoObjTracker(C, "obj")
 
