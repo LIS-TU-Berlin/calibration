@@ -1,0 +1,90 @@
+diff --git a/src/Basler/BaslerThread.cpp b/src/Basler/BaslerThread.cpp
+index cad6c72..bc86446 100644
+--- a/src/Basler/BaslerThread.cpp
++++ b/src/Basler/BaslerThread.cpp
+@@ -27,7 +27,7 @@ struct sBaslerThread{
+ 
+ 
+ BaslerThread::BaslerThread(const strA& ids)
+-    : Thread("BaslerThread"), color(ids.N) {
++    : Thread("BaslerThread"), color(ids.N), serials(ids) {
+   threadOpen(true);
+   threadLoop();
+ }
+@@ -46,12 +46,25 @@ void BaslerThread::open() {
+     Pylon::CTlFactory& tlFactory = Pylon::CTlFactory::GetInstance();
+     Pylon::DeviceInfoList_t devices;
+     CHECK(tlFactory.EnumerateDevices(devices)>=0, "No camera present");
+-    uint n = devices.size();
+-    if(color.N<n) n=color.N;
++    uint n = color.N;
+     LOG(0) <<"opening " <<n <<" basler cameras (" <<devices.size() <<" found)";
++    //-- camera i is the device with serial serials(i); non-serial ids (e.g. "none") take the remaining devices in enumeration order
++    str found;
++    for(uint d=0; d<devices.size(); d++) found <<' ' <<devices[d].GetSerialNumber().c_str();
++    uintA dev(n);
++    boolA used(devices.size()); used=false;
++    for(uint i=0; i<n; i++) {
++        dev(i)=devices.size();
++        for(uint d=0; d<devices.size(); d++) if(serials(i)==devices[d].GetSerialNumber().c_str()){ dev(i)=d; used(d)=true; }
++    }
++    for(uint i=0; i<n; i++) if(dev(i)==devices.size()) {
++        bool anySerial = !serials(i).N || !isdigit(serials(i)(0));
++        if(anySerial) for(uint d=0; d<devices.size(); d++) if(!used(d)){ dev(i)=d; used(d)=true; break; }
++        CHECK(dev(i)<devices.size(), "basler camera " <<i <<" with serial '" <<serials(i) <<"' not found -- connected serials:" <<found);
++    }
+     s->cameras = make_shared<Pylon::CInstantCameraArray>(n);
+     for(uint i=0; i<n; i++) {
+-        (*s->cameras)[i].Attach( tlFactory.CreateDevice( devices[i] ) );
++        (*s->cameras)[i].Attach( tlFactory.CreateDevice( devices[dev(i)] ) );
+         // (*s->cameras)[i].OutputQueueSize = 10;
+         const Pylon::CDeviceInfo& info = (*s->cameras)[i].GetDeviceInfo();
+         LOG(0) <<"Device " <<i <<" model: " << info.GetModelName() <<" serial numer: " <<info.GetSerialNumber() <<" name: " <<info.GetFullName();
+diff --git a/src/Basler/BaslerThread.h b/src/Basler/BaslerThread.h
+index 687fa89..2734743 100644
+--- a/src/Basler/BaslerThread.h
++++ b/src/Basler/BaslerThread.h
+@@ -9,6 +9,7 @@ struct BaslerThread : Thread {
+   struct sBaslerThread *s=0;
+ 
+   rai::Array<Var<byteA>> color;
++  strA serials;
+ 
+   BaslerThread(const strA& ids);
+   ~BaslerThread();
+diff --git a/src/BotOp/bot.cpp b/src/BotOp/bot.cpp
+index d0fdf45..75be24b 100644
+--- a/src/BotOp/bot.cpp
++++ b/src/BotOp/bot.cpp
+@@ -94,12 +94,20 @@ void BotOp::launch_simulation(rai::Configuration& C){
+   }
+ }
+ 
++str getAttAsString(rai::Frame* f, const char* key){
++  rai::Node* n = f->ats ? f->ats->findNode(key) : nullptr;
++  if(!n) return str();
++  if(n->is<str>()) return n->as<str>();
++  str s; n->writeValue(s); //numeric serials (e.g. 'basler: 40788612' in yaml) are parsed as numbers
++  return s;
++}
++
+ auto getFramesAndIds(rai::Configuration& C, const char* key){
+   FrameL F;
+   strA ids;
+-  str tmp;
+   for(rai::Frame *f:C.frames){
+-    if(f->ats && f->ats->get<str>(tmp, key)){
++    str tmp = getAttAsString(f, key);
++    if(tmp.N){
+       F.append(f); ids.append(tmp);
+     }
+   }
+@@ -616,7 +624,7 @@ void BotOp::launch_MultiRealSense(const FrameL& f_cams, bool captureColor, bool
+ void BotOp::launch_baslers(const FrameL& f_cams){
+   StringA serialNumbers;
+   for(auto* f:f_cams){
+-    str sn = f->ats->get<str>("basler");
++    str sn = getAttAsString(f, "basler");
+     serialNumbers.append(sn);
+   }
+   LOG(0) <<"== LAUNCHING baslers:" <<serialNumbers;

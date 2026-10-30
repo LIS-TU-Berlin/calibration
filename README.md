@@ -14,6 +14,44 @@ It provides options for
 
 * Requires [robotic](https://github.com/MarcToussaint/robotic)
 
+### Trossen setup (Basler cams, no Franka)
+
+Requires the newest robotic built from source, with the patch in `patches/botop-basler-serials.patch`.
+Without it, `launch_baslers` fails on the numeric `basler:` serials in the scenes, and the cams are not opened by serial.
+
+```
+cd ~/git && git clone --recursive https://github.com/MarcToussaint/robotic.git && cd robotic
+git -C botop apply ~/git/calibration/patches/botop-basler-serials.patch
+cp rai/_make/install.sh . && source ./install.sh vars_only
+sudo apt install --yes ${ubuntu_rai} ${ubuntu_botop} ${ubuntu_python}
+./install.sh libccd && ./install.sh fcl && ./install.sh libann && ./install.sh opencv && ./install.sh physx
+./install.sh trossen_arm   # default version; '-v 1.10.0' fails (the tag is v1.10.0)
+./install.sh basler        # pylon, scp from hal
+
+cd ~/git/calibration && uv venv && source .venv/bin/activate
+uv pip install numpy pybind11 pybind11-stubgen pyyaml opencv-python
+
+cd ~/git/robotic && ln -f -s _make/CMakeLists-ubuntu.txt CMakeLists.txt
+cmake . -B build -DUSE_OPENCV=ON -DUSE_BASLER=ON -DUSE_TROSSEN=ON -DUSE_LIBFRANKA=OFF -DUSE_REALSENSE=OFF
+make -C build _robotic docstrings install -j $(nproc --ignore 2)
+uv pip install -e .
+```
+
+USB access for the cams (once; then replug them):
+```
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="2676", MODE:="0666"' | sudo tee /etc/udev/rules.d/69-basler-cameras.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger
+sudo sh -c 'echo 1000 > /sys/module/usbcore/parameters/usbfs_memory_mb'   # not persistent across reboots
+```
+
+Intrinsics (scene in `scenes/trossen/`, data in `data/trossen/`):
+```
+python3 main.py -setup trossen -view -board    # live charuco detection; corner count green = view usable
+python3 main.py -setup trossen -collect_board  # 'q' to stop
+python3 main.py -setup trossen -intrinsic      # writes scenes/trossen/cams_intrinsics.yml
+```
+`tests/cam_test.py` checks the cams directly with pypylon (`uv pip install pypylon`), independent of robotic.
+
 
 ## KOMO Calibration Method (extinsic; jointly cams, arucos & joints via bundle adjustment)
 
