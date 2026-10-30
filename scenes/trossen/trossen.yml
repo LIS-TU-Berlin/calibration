@@ -1,0 +1,40 @@
+world: { shape: marker, size: [.3] }
+
+# camera_i opens the basler with that serial (robotic botop patch); a missing serial is an error listing the connected ones
+# Q are placeholders: set them roughly (+-10cm) before extrinsic calibration
+# fxycxy/distortion are the station's a2A2590 values as initial guess, overwritten by cams_intrinsics.yml
+
+camera_0(world): {  # right (standing in front of the rig, see tests/cam_test.py)
+  basler: 42023491,
+  Q: [.5, .5, .5, 1., 0., 0., 0.],
+  shape: marker, size: [.1],
+  width: 1296, height: 972,
+  fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
+}
+
+camera_1(world): {  # left
+  basler: 42023496,
+  Q: [-.5, .5, .5, 1., 0., 0., 0.],
+  shape: marker, size: [.1],
+  width: 1296, height: 972,
+  fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
+}
+
+camera_2(world): {  # top
+  basler: 42023506,
+  Q: [0., -.5, .5, 1., 0., 0., 0.],
+  shape: marker, size: [.1],
+  width: 1296, height: 972,
+  fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
+}
+
+Prefix: cam0_
+Include: <$RAI_PATH/basler/basler.yml>
+Prefix: cam1_
+Include: <$RAI_PATH/basler/basler.yml>
+Prefix: cam2_
+Include: <$RAI_PATH/basler/basler.yml>
+Prefix: false
+Edit cam0_basler(camera_0): {}
+Edit cam1_basler(camera_1): {}
+Edit cam2_basler(camera_2): {}
