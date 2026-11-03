@@ -102,7 +102,7 @@ Run with more verbose to check images and charuco detections.
 1. Position cameras. Upright. Aperture (Blende) not too bright (reduces Tiefenschärfe). Properly focus on center object.
 1. Collect charuco board data
 ```
-python3 main.py -collect_board -scene pandas_table
+python3 main.py -collect_board -ncams 4 -scene pandas_table
 ```
 Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate intrinsics
@@ -111,7 +111,7 @@ python3 main.py -intrinsic -ncams 4 -scene pandas_table
 ```
 1. Collect franka calib data
 ```
-python3 main.py -collect_franka -scene pandas_table
+python3 main.py -collect_franka -ncams 4 -scene pandas_table
 ```
 Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate extrinsics and robot joints

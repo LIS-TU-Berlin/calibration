@@ -1,0 +1,36 @@
+world: {}
+
+table(world): {
+ shape: ssBox, Q: [0, 0., .6], size: [1.1, 1.2, .1, .02], color: [.3, .3, .3],
+ contact: 1, logical: { },
+ friction: .1
+}
+
+Include: <$RAI_PATH/scenarios/panda_fixGripper.g>
+
+Edit panda_base (table): {
+  Q: "t(0 -.345 .05) d(90 0 0 1)",
+  joint: rigid,
+  franka: "172.16.0.2"
+}
+
+Edit panda_joint7: {  # Prevent long camera mount self collisions
+  limits: [-0.7, 2.3]
+}
+
+art0(table): { shape: quad, size: [.045, .045], aruco_id: 25 }
+art1(table): { shape: quad, size: [.045, .045], aruco_id: 31 }
+art2(table): { shape: quad, size: [.045, .045], aruco_id: 43 }
+art3(table): { shape: quad, size: [.045, .045], aruco_id: 27 }
+art4(table): { shape: quad, size: [.045, .045], aruco_id: 28 }
+art5(table): { shape: quad, size: [.045, .045], aruco_id: 33 }
+
+# art6(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 39 }
+# art7(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 45 }
+# art8(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 34 }
+
+camera_0(panda_joint7): {
+  shape: marker, size: [.1],
+  focalLength: 0.895, width: 848, height: 480, zRange: [.1, 10],
+  realsense: "sn825312070938_" # Without sn and _ robotic reads random values from here...
+}

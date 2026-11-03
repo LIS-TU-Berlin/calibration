@@ -1,0 +1,7 @@
+Edit(panda_joint1_origin): { pose: [0, 0, 0.333, 0.999967, 0, 0, -0.00809646] } #calib: 7.04301e-07deg
+Edit(panda_joint2_origin): { pose: [0, 0, 0, 0.707107, -0.707107, 0.000206844, 0.000206844] } #calib: 8.29535e-08deg
+Edit(panda_joint3_origin): { pose: [0, -0.316, 0, 0.707107, 0.707107, -0.00055862, 0.00055862] } #calib: 8.61558e-08deg
+Edit(panda_joint4_origin): { pose: [0.0825, 0, 0, 0.707107, 0.707107, 0.000344384, -0.000344384] } #calib: 3.40864e-08deg
+Edit(panda_joint5_origin): { pose: [-0.0825, 0.384, 0, 0.707106, -0.707106, 0.000910768, 0.000910768] } #calib: -1.00699e-07deg
+Edit(panda_joint6_origin): { pose: [0, 0, 0, 0.707102, 0.707102, 0.00249104, -0.00249104] } #calib: 6.02202e-07deg
+Edit(panda_joint7_origin): { pose: [0.088, 0, 0, 0.707102, 0.707102, -0.00260741, 0.00260741] } #calib: 4.20226e-07deg
