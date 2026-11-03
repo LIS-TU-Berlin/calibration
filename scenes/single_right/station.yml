@@ -1,0 +1,61 @@
+world: {}
+
+table(world): {
+ shape: ssBox, Q: [0, 0., .6], size: [1.1, 1.2, .1, .02], color: [.3, .3, .3],
+ contact: 1, logical: { },
+ friction: .1
+}
+
+obj_base: { X: [ 0., 1., .8] }
+obj(obj_base): { joint: free, limits: [-3.2,-3.2,-3.2,-1.1,-1.1,-1.1,-1.1,3.2,3.2,3.2,1.1,1.1,1.1,1.1], Q: [.1, .2, .1], shape: ssBox, size: [.17, .17, .17, .005], color: [1., .5, .0], mass: .2, sampleUniform: 1., contact: 1 }
+# obj_axes(obj): { shape: marker, size: [.2], simulation: false }
+
+Include: <$RAI_PATH/scenarios/panda_fixGripper.g>
+
+Edit panda_base (table): {
+  Q: "t(0 -.345 .05) d(90 0 0 1)",
+  joint: rigid,
+  franka: "172.16.0.1"
+}
+
+art0(table): { shape: quad, size: [.045, .045], aruco_id: 38 }
+art1(table): { shape: quad, size: [.045, .045], aruco_id: 44 }
+art2(table): { shape: quad, size: [.045, .045], aruco_id: 32 }
+art3(table): { shape: quad, size: [.045, .045], aruco_id: 26 }
+art4(table): { shape: quad, size: [.045, .045], aruco_id: 37 }
+art5(table): { shape: quad, size: [.045, .045], aruco_id: 42 }
+
+art6(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 29 }
+art7(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 30 }
+art8(panda_hand_joint): { shape: quad, size: [.045, .045], aruco_id: 36 }
+
+camera_0(panda_joint7): {
+  shape: marker, size: [.1],
+  focalLength: 0.895, width: 848, height: 480, zRange: [.1, 10],
+  realsense: "sn102422075114_" # Without 'sn' and '_' robotic reads random values from here...
+  # realsense: "102422075114"
+}
+
+camera_1(table): {  # Left
+  shape: marker, size: [.1],
+  focalLength: 0.895, width: 848, height: 480, zRange: [.1, 10],
+  realsense: "sn108322073334_"
+  # realsense: "108322073334"
+}
+cam_safety_region(camera_1): {
+  shape: sphere, size: [.15],
+  color: [1., 1., 1., .2],
+  contact: 1
+}
+
+camera_2(table): {  # Right
+  shape: marker, size: [.1],
+  focalLength: 0.895, width: 848, height: 480, zRange: [.1, 10],
+  realsense: "sn908212070159_"
+  # realsense: "908212070159"
+}
+cam_safety_region(camera_2): {
+  shape: sphere, size: [.15],
+  color: [1., 1., 1., .2],
+  contact: 1
+}

@@ -1,0 +1,17 @@
+Edit(camera_0): { fxycxy: [421.103, 421.245, 425.826, 242.44], distortion: [0.105187, -0.237492, 0, 0, 0] }  #err: 0.238161 count: 26
+Edit(camera_1): { fxycxy: [420.089, 417.68, 429.049, 235.417], distortion: [0.0897415, -0.19115, 0, 0, 0] }  #err: 0.379393 count: 19
+Edit(camera_2): { fxycxy: [414.678, 410.96, 426.254, 235.538], distortion: [0.082328, -0.166661, 0, 0, 0] }  #err: 0.289836 count: 23
+
+# Edit(camera_0): { fxycxy: [423.296570, 423.296570, 430.695801, 245.522339], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # serial: 102422075114, model: distortion.brown_conrady
+# Edit(camera_1): { fxycxy: [422.428223, 422.428223, 425.312103, 236.788071], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # serial: 108322073334, model: distortion.brown_conrady
+# Edit(camera_2): { fxycxy: [419.177948, 419.177948, 427.875610, 241.688354], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # serial: 908212070159, model: distortion.brown_conrady
+
+# Edit(camera_0): { fxycxy: [606.939026, 607.203369, 417.355194, 234.149033], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # stream: rgb, serial: 102422075114, resolution: 848x480, distortion model: distortion.inverse_brown_conrady
+# Edit(camera_1): { fxycxy: [604.827881, 604.510376, 436.706543, 249.437454], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # stream: rgb, serial: 108322073334, resolution: 848x480, distortion model: distortion.inverse_brown_conrady
+# Edit(camera_2): { fxycxy: [614.247742, 614.417603, 430.023407, 238.855728], distortion: [0.0, 0.0, 0.0, 0.0, 0.0] }
+# # stream: rgb, serial: 908212070159, resolution: 848x480, distortion model: distortion.inverse_brown_conrady

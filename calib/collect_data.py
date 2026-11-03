@@ -14,22 +14,36 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path=
     ry.set_params({"botsim/verbose": 0, "bot/useAudio": True})
 
     V = ry.ImageViewer()
-    ncams = len(S.basler_ids)
-    cam_list = [f"{i}" for i in range(ncams)]
 
     bot = ry.BotOp(C, True, False)
-    bot.launch_baslers(cam_list, [])
+
+    if S.basler_ids:
+        ncams = len(S.basler_ids)
+        bot.launch_baslers(S.baslers)
+    
+    elif S.realsense_ids:
+        ncams = len(S.realsense_ids)
+        bot.launch_MultiRealSense(S.realsenses, captureColor=True, captureDepth=True)
+
+    else:
+        raise Exception("No camera hardware specified!")
 
     if use_franka:
-        bot.launch_franka("172.17.0.2", C.getFrame("r_panda_base"))  # TODO: works only for right panda...
+        bot.launch_franka(S.panda_ip, S.panda_base)
+        bot.home(C)
 
     t = 0
     Q = []
     stop = False
     while not stop:
         if use_franka:
-            q_next = S.get_random_pose()
-            bot.moveTo(q_next)
+            feasible = False
+
+            while not feasible:
+                q_next = S.get_random_pose()
+                path, feasible = S.make_path(bot.get_q(), q_next)  # This avoids hitting the table between poses
+
+            bot.moveAutoTimed(path, 1.0, 1.0)
             C.viewer().raiseWindow()
             key = bot.wait(C)
             if key == ord("q"):
@@ -43,8 +57,17 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_franka=False, data_path=
             for i in range(40):
                 time.sleep(0.025)
                 rgbs = []
-                for c in range(ncams):
+
+                # Sometimes not all cameras are active, so we need to wait
+                c = 0
+                while c < ncams:
                     rgbs.append(bot.getImage(f"camera_{c}"))
+                    if not rgbs[-1].shape[0]:
+                        rgbs = []
+                        c = 0
+                        continue
+                    c += 1
+
                 rgb = np.hstack(rgbs)
                 key = V.view(rgb, zoom=0.4)
                 if key == ord("q"):

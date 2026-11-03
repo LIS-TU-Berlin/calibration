@@ -13,8 +13,8 @@ from calib.cam_view import cam_view
 from calib.collect_data import collect_data
 
 
-def load_images(path, C):
-    T = sum(1 for f in os.listdir(path) if f.lower().endswith(".png")) // 4
+def load_images(path: str, C: int):
+    T = sum(1 for f in os.listdir(path) if f.lower().endswith(".png")) // C
     imgs = np.empty((T, C), dtype=object)
     for t in range(T):
         for c in range(C):
@@ -23,18 +23,18 @@ def load_images(path, C):
             imgs[t, c] = cv2.cvtColor(cv2.imread(filename), cv2.COLOR_BGR2RGB)
     return imgs
 
-def move_calib_files():
-    os.makedirs("scenes/calib", exist_ok=True)
+def move_calib_files(scene: str):
+    os.makedirs(f"scenes/{scene}/calib", exist_ok=True)
 
     files = ["arucos", "cams", "joints", "box"]
 
     for file in files:
         src = Path(f"calib_{file}.yml")
-        dst = Path(f"scenes/calib/{file}.yml")
+        dst = Path(f"scenes/{scene}/calib/{file}.yml")
         if src.exists(): src.rename(dst)
 
     src = Path(f"calib_cams_intrinsics.yml")
-    dst = Path(f"scenes/cams_intrinsics.yml")
+    dst = Path(f"scenes/{scene}/cams_intrinsics.yml")
     if src.exists(): src.rename(dst)
 
 
@@ -50,70 +50,76 @@ def main():
     parser.add_argument(
         "-overlay",
         help="overlay rendered images on the collected franka data to check calibration",
-        action="store_true",
+        action="store_true"
     )
     parser.add_argument("-track", help="track the black cube for testing", action="store_true")
 
     # Params
-    parser.add_argument("-ncams", type=int, help="number of cams", nargs="?", default=4)
+    parser.add_argument("-ncams", type=int, help="number of cams", nargs="?", default=3)
+    parser.add_argument("-scene", type=str, help="scene folder", default="single_right")
     args = parser.parse_args()
 
     if args.view:
         cam_view(args.ncams, True)
 
-    elif args.collect_board:
-        path = "data/board"
+    elif args.collect_board or args.collect_franka:
+        path = "data/franka" if args.collect_franka else "data/board"
+        
         C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
+        C.addFile(
+            os.path.join("scenes", args.scene, "scene_init.yml")
+        )
         C.view(False, 'loaded scene')
-        S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=False, data_path=path)
-
-    elif args.collect_franka:
-        path = "data/franka"
-        C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
-        C.view(False, 'loaded scene')
-        S = CalibrationScene(C, "obj")
-        collect_data(C, S, use_franka=True, data_path=path)
+        
+        # S = CalibrationScene(C, "obj")
+        S = CalibrationScene(C, "")
+        collect_data(C, S, use_franka=args.collect_franka, data_path=path)
 
     elif args.intrinsic:
         path = "data/board"
-        imgs = load_images(path, 4)
+        imgs = load_images(path, args.ncams)
+        print(imgs.shape)
         Fxycxy, Distortion = ry.calib.calibrate_intrinsics(imgs, distortionDofs=2, verbose=2)
         print("INTRINSICS:\n", Fxycxy, Distortion)
-        move_calib_files()
+        move_calib_files(args.scene)
 
     elif args.extrinsic:
         path = "data/franka"
         C = ry.Config()
-        C.addFile("scenes/scene_init.yml")
-        imgs = load_images(path, 4)
-        ids, pts = ry.calib.detect_arucos(imgs, verbose=5)
+        C.addFile(
+            os.path.join("scenes", args.scene, "scene_init.yml")
+        )
+        
+        imgs = load_images(path, args.ncams)
+        ids, pts = ry.calib.detect_arucos(imgs, verbose=0)
         qs = np.loadtxt(f"{path}/q_arr.txt")
-        qs = qs[: imgs.shape[0], :]
+        qs = qs[: imgs.shape[0]]
+
+        # C.selectJoints(["obj"], notThose=True)
 
         ry.calib.komo_calibrate(
             C,
             ids,
             pts,
             qs,
-            exclude_times=[22, 10, 20, 42], #todo make this list a cmd line argument
+            exclude_times=[11, 42, 32, 33, 36, 12, 21, 5, 26, 31, 43, 41, 4, 28, 27, 3, 2, 25, 20, 34, 1, 22, 23, 24, 39, 0, 10, 13, 9, 14, 37, 17, 19], #todo make this list a cmd line argument
             calibrate_cams=True,
             calibrate_arucos=True,
             calibrate_joints=True,
             calibrate_objPoses=False,
             calib_joint_regularization=1e1,
-            verbose=2,
+            verbose=1,
         )
 
-        move_calib_files()
+        move_calib_files(args.scene)
 
     elif args.overlay:
         path = "data/franka"
         C = ry.Config()
-        C.addFile("scenes/scene_calib.yml")
-        imgs = load_images(path, 4)
+        C.addFile(
+            os.path.join("scenes", args.scene, "scene_calib.yml")
+        )
+        imgs = load_images(path, args.ncams)
         qs = np.loadtxt(f"{path}/q_arr.txt")
 
         undistored = ry.calib.undistort_images(C, imgs)
@@ -126,7 +132,9 @@ def main():
 
     elif args.track:
         C = ry.Config()
-        C.addFile("scenes/scene_cube.yml")
+        C.addFile(
+            os.path.join("scenes", args.scene, "scene_cube.yml")
+        )
 
         bot = ry.BotOp(C, False, False)
         bot.launch_baslers([str(i) for i in range(4)], [])

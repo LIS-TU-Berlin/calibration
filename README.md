@@ -97,28 +97,28 @@ Run with more verbose to check images and charuco detections.
 
 # Practical pipeline
 
-1. Setup the scene config file, with cams, arucos, roughly positions. Use `ry-view` and `scene_info` to check.
+1. Setup the scene config file, with cams, arucos, roughly at the correct positions. Use `ry-view` and `scene_info` to view the configuration.
 1. Use `ry-view-baslers` to run cams (TODO: add option to continuously show charuco boards and/or aruco markers). Ensure framerate around 60Hz.
 1. Position cameras. Upright. Aperture (Blende) not too bright (reduces Tiefenschärfe). Properly focus on center object.
 1. Collect charuco board data
 ```
-python3.py main.py -collect_board
+python3 main.py -collect_board -scene pandas_table
 ```
 Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate intrinsics
 ```
-python3.py main.py -intrinsic
+python3 main.py -intrinsic -ncams 4 -scene pandas_table
 ```
 1. Collect franka calib data
 ```
-python3.py main.py -collect_franka
+python3 main.py -collect_franka -scene pandas_table
 ```
 Stop the data collection by pressing `q`. We recommend 30 to 50 images.
 1. Calibrate extrinsics and robot joints
 ```
-python3.py main.py -extrinsic
+python3 main.py -extrinsic -ncams 4 -scene pandas_table
 ```
 1. Check with overlaying rendered and undistored images.
 ```
-python3.py main.py -overlay
+python3 main.py -overlay -ncams 4 -scene pandas_table
 ```
