@@ -1,28 +1,46 @@
-world: { shape: marker, size: [.3] }
+# Trossen Stationary AI kit on the beech workbench, with only the LEFT follower arm (Trossen's naming),
+# 3 Basler cameras on the tower, and the calibration arucos.
+# World = workbench frame: +y = front (open side), camera tower at y = -.40, follower at x = -.4575.
+# The kit model (kit/) is from the 26-sgrl-hhi repo (stationary_ai_conv.yml, generated from Trossen's MuJoCo model).
+
+Include: <kit/_workbench.g>
+Include: <kit/stationary_ai_conv.yml>
+Edit base: { X: [0, -.021, .806, 0.7071068, 0, 0, 0.7071068] }  # kit frame on the workbench (as in stationary_ai_workbench.yml)
+
+# we only have the left follower: remove the right follower (incl. cam_right_wrist) and the two leaders
+DeleteBranch follower_right_base_link_10: true
+DeleteBranch leader_left_base_link_19: true
+DeleteBranch leader_right_base_link_31: true
+
+# q = 6 arm joints + gripper, as the Trossen driver reports them: the left carriage follows the right one
+Edit follower_left_left_carriage_joint: { mimic: follower_left_right_carriage_joint}
+Edit follower_left_left_carriage_joint: {joint_active: False}
+Edit follower_left_base_link_1: { trossen: "192.168.1.5" }
 
 # camera_i opens the basler with that serial (robotic botop patch); a missing serial is an error listing the connected ones
-# Q are placeholders: set them roughly (+-10cm) before extrinsic calibration
-# fxycxy/distortion are the station's a2A2590 values as initial guess, overwritten by cams_intrinsics.yml
+# Q (optical frame: z = look, y = image down) are rough: solvePnP of the static table arucos in one image per camera
+# (1-2px mean reprojection error); extrinsic calibration refines them
+# fxycxy/distortion are initial guesses, overwritten by cams_intrinsics.yml
 
-camera_0(world): {  # right (standing in front of the rig, see tests/cam_test.py)
+camera_0(tabletop_link_0): {  # tower upright opposite the arm (world x = +.35), looking diagonally across the table
   basler: 42023491,
-  Q: [.5, .5, .5, 1., 0., 0., 0.],
+  Q: [-0.28544, -0.34941, 0.17487, 0.58377, -0.71154, 0.29976, -0.25111],
   shape: marker, size: [.1],
   width: 1296, height: 972,
   fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
 }
 
-camera_1(world): {  # left
+camera_1(tabletop_link_0): {  # tower upright on the arm's side (world x = -.34)
   basler: 42023496,
-  Q: [-.5, .5, .5, 1., 0., 0., 0.],
+  Q: [-0.28426, 0.34417, 0.16864, 0.23836, -0.29759, 0.70977, -0.59233],
   shape: marker, size: [.1],
   width: 1296, height: 972,
   fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
 }
 
-camera_2(world): {  # top
+camera_2(tabletop_link_0): {  # top, under the tower crossbar, mounted upside down (image top = tower side)
   basler: 42023506,
-  Q: [0., -.5, .5, 1., 0., 0., 0.],
+  Q: [-0.35023, 0.0192, 0.9279, 0.13731, 0.6933, 0.69615, 0.12592],
   shape: marker, size: [.1],
   width: 1296, height: 972,
   fxycxy: [1012., 1012., 640., 460.], distortion: [-0.25, 0.13, 0., 0., 0.]
@@ -35,6 +53,18 @@ Include: <$RAI_PATH/basler/basler.yml>
 Prefix: cam2_
 Include: <$RAI_PATH/basler/basler.yml>
 Prefix: false
-Edit cam0_basler(camera_0): {}
-Edit cam1_basler(camera_1): {}
-Edit cam2_basler(camera_2): {}
+Edit cam0_basler(camera_0): { Q: [0, 0, -.045] }  # body behind the lens front
+Edit cam1_basler(camera_1): { Q: [0, 0, -.045] }
+Edit cam2_basler(camera_2): { Q: [0, 0, -.045] }
+
+# arucos: 35mm black square (45mm with the white margin)
+ar28(tabletop_link_0): { Q: [.05, .017, 0.02, 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 28 }
+ar29(base): { Q: [-.075, -.165, .02, 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 29 }
+ar30(base): { Q: [-.157, -.016 , .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 30 }
+ar34(base): { Q: [.0, -.088 , .02 ,1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 34 }
+ar40(base): { Q: [.102 , .175, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 40 }
+ar46(base): { Q: [-.057 , .109, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 46 }
+ar47(base): { Q: [-.108 , .223, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 47 }
+ar41(cam_left_wrist): { Q: [.01 , .01, -.025 , 0., 1., 0., 0.], shape: quad, size: [.045, .045], aruco_id: 41 }
+ar45(follower_left_carriage_left_9): { Q: [.035 , -.021, .0 , 0.704416, 0.704416, -0.0616284, -0.0616284], shape: quad, size: [.045, .045], aruco_id: 45 }
+ar35(follower_left_link_5_6): { Q: [.0 , .0, .057 , 0., 0., 0., 1.], shape: quad, size: [.045, .045], aruco_id: 35 }
