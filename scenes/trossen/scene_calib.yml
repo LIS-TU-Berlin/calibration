@@ -3,4 +3,4 @@ Include: <trossen.yml>
 Include: <cams_intrinsics.yml>
 Include: <calib/cams.yml>
 Include: <calib/arucos.yml>
-# Include: <calib/joints.yml>  # only written by -extrinsic -joints 1
+Include: <calib/joints.yml>  # joint zero offsets (-extrinsic -joints 1, the default)

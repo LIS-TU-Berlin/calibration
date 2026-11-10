@@ -88,7 +88,7 @@ def main():
     parser.add_argument("-calib", help="with -overlay/-reproj: folder with the calibration (cams.yml, arucos.yml) (default: <data>/calib if -extrinsic wrote one, else scenes/<setup>/calib)", default=None)
     parser.add_argument("-nposes", type=int, help="with -collect_robot: stop after that many poses (default: until 'q')", default=0)
     parser.add_argument("-max_vel", type=float, help="with -collect_robot (trossen): max joint velocity [rad/s]", default=.3)
-    parser.add_argument("-joints", type=int, choices=[0, 1], help="with -extrinsic: also calibrate joint offsets (default: 1 for station, 0 else)", default=None)
+    parser.add_argument("-joints", type=int, choices=[0, 1], help="with -extrinsic: also calibrate joint (zero) offsets (default: 1, 0 with -sim where there are none)", default=None)
     parser.add_argument("-exclude", type=int, nargs="*", help="with -extrinsic: time slices to exclude (default station: 22 10 20 42, else none)", default=None)
     args = parser.parse_args()
 
@@ -127,6 +127,7 @@ def main():
 
     elif args.extrinsic:
         path = robot_dir
+        joints = bool(args.joints if args.joints is not None else not args.sim)
         C = ry.Config()
         C.addFile(f"{scene_dir}/scene_init.yml")
         imgs = load_images(path)
@@ -146,17 +147,19 @@ def main():
             exclude_times=exclude,
             calibrate_cams=True,
             calibrate_arucos=True,
-            calibrate_joints=bool(args.joints if args.joints is not None else args.setup == "station"),
+            calibrate_joints=joints,
             calibrate_objPoses=False,
             calib_joint_regularization=1e1,
             verbose=2,
         )
 
         move_calib_files(scene_dir)
+        if not joints:  # no stale joint offsets from an earlier run (scene_calib.yml includes calib/joints.yml)
+            with open(f"{scene_dir}/calib/joints.yml", "w") as fil:
+                fil.write("# no joint offsets (-extrinsic -joints 0)\n")
         # keep a copy with the data, so each dataset's result can be checked later (-reproj uses it)
         os.makedirs(f"{path}/calib", exist_ok=True)
-        joints = bool(args.joints if args.joints is not None else args.setup == "station")
-        for f in ["cams", "arucos"] + (["joints"] if joints else []):
+        for f in ["cams", "arucos", "joints"]:
             if os.path.exists(f"{scene_dir}/calib/{f}.yml"):
                 shutil.copy(f"{scene_dir}/calib/{f}.yml", f"{path}/calib/{f}.yml")
         print(f"-- calibration in {scene_dir}/calib/ and {path}/calib/")

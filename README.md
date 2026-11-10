@@ -76,7 +76,7 @@ Extrinsics:
 ```
 python3 main.py -setup trossen -collect_robot -sim -nposes 5   # simulated arm, rendered images -> data/trossen/robot_sim
 python3 main.py -setup trossen -collect_robot -nposes 30       # real arm (start in the rest pose, stand at the e-stop; 'q' stops)
-python3 main.py -setup trossen -extrinsic                      # cams + aruco positions (-joints 1: also joint offsets)
+python3 main.py -setup trossen -extrinsic                      # cams, aruco positions and joint zero offsets (-joints 0: without)
 python3 main.py -setup trossen -reproj                         # check: [real | sim | overlay] per image + pixel errors
 ```
 `-data <folder>` picks another dataset in `data/trossen/` (default `robot`); `-extrinsic` writes the result to
@@ -92,13 +92,18 @@ instead. Table markers should be at 1-2 px; the arm markers are what fix the cam
 A pose whose arm markers are off by 100+ px in one camera only (while the others fit) was captured mid-motion
 or is otherwise broken: `-exclude` it.
 
-First Trossen calibration (2026-11-10, 30 poses, poses 3 and 20 excluded, f(x) 172): table 1.6 px, arm markers
-~10 px median (~5 mm at 0.5 m). ar35 was attached to the wrong link (it does not turn with joint 4) and dominated
-the earlier error; the arm markers' in-plane yaw was then measured from the images (0.7-5.7 deg, small effect).
+First Trossen calibration (2026-11-10, `data/trossen/robot_stripped`, 30 poses, poses 3 and 20 excluded):
+* ar35 was attached to the wrong link (it does not turn with joint 4) and dominated the earlier error; the arm
+  markers' in-plane yaw was then measured from the images (0.7-5.7 deg, small effect)
+* without joint offsets (f(x) 167): table 1.6 px, arm markers 9.5 px median (~5 mm at 0.5 m)
+* with joint offsets (f(x) 79, in `scenes/trossen/calib/`): table 0.9 px, arm markers 5.4 px median (~2.5 mm);
+  on a second dataset not used for it: 1.1 / 6.7 px. Offsets -1.5..+1.4 deg, the same within 0.2 deg when
+  calibrated on both datasets together; the cameras then agree within 2 mm / 0.1 deg
 Each pose shows a random arm aruco to a random camera (0.3-0.7 m in front of it, facing it, checked for occlusion in a
 rendering), keeps the arm 5 cm off the table and 12 cm off the cameras, and is reached on a collision-free KOMO path
 at `-max_vel` (default 0.3 rad/s). In simulation (30 poses), cams + aruco positions come out within 1-2 mm of the
-true camera positions, also with 5 mm errors in the hand-measured table arucos; calibrating joint offsets too is worse.
+true camera positions, also with 5 mm errors in the hand-measured table arucos (the simulated arm has no joint offsets:
+use `-extrinsic -sim`, which turns them off).
 
 
 ## KOMO Calibration Method (extinsic; jointly cams, arucos & joints via bundle adjustment)

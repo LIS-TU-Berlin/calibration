@@ -1,0 +1,8 @@
+   Edit(follower_left_joint_0_origin): { pose: [0, 0, 0.05725, 0.999992, 0, 0, -0.00412234] } #calib: -0.472386deg
+   Edit(follower_left_joint_1_origin): { pose: [0.02, 9.71445e-19, 0.04625, 0.707054, -0.707054, 0.00866509, 0.00866509] } #calib: 1.40427deg
+   Edit(follower_left_joint_2_origin): { pose: [-0.264, 3.60822e-19, 0, 0.707076, 0.707076, 0.00654484, -0.00654484] } #calib: -1.06065deg
+   Edit(follower_left_joint_3_origin): { pose: [0.245, -1.11022e-18, 0.06, 0.7071, 0.7071, -0.00308369, 0.00308369] } #calib: 0.499734deg
+   Edit(follower_left_joint_4_origin): { pose: [0.06775, 1.16573e-18, 0.0455, 6.12315e-17, 0.00531298, 0.999986, 3.25326e-19] } #calib: 0.608826deg
+   Edit(follower_left_joint_5_origin): { pose: [0.02895, -5.10703e-19, -0.0455, 0.707048, -0.00908781, 0.707048, -0.00908781] } #calib: -1.47278deg
+   Edit(follower_left_right_carriage_joint_origin): { pose: [0.0865, -0.023, 0, 0.707107, 0.707107, 0, -0] } #calib: 0deg
+   Edit(follower_left_left_carriage_joint_origin): { pose: [0.0865, 0.023, 0, 0.707106, -0.707106, 0.00110042, 0.00110042] } #calib: 0.17833deg
