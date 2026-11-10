@@ -52,6 +52,38 @@ python3 main.py -setup trossen -intrinsic      # writes scenes/trossen/cams_intr
 ```
 `tests/cam_test.py` checks the cams directly with pypylon (`uv pip install pypylon`), independent of robotic.
 
+Arm connection: the controller (follower, 192.168.1.5, TCP port 50001) does no DHCP, so give the laptop's Ethernet
+port (`eth0` on the Dell dock; check with `ip -br link`) a static address in its subnet:
+```
+sudo nmcli con add type ethernet ifname eth0 con-name trossen ipv4.method manual ipv4.addresses 192.168.1.10/24 ipv4.never-default yes connection.autoconnect-priority 10
+sudo nmcli con up trossen
+ping -c 3 192.168.1.5 && nc -zv 192.168.1.5 50001   # nc refused: controller still holds an old connection -> power-cycle it
+```
+The IP is the `trossen:` attribute in `scenes/trossen/trossen.yml`; botop connects with
+`bot.launch_trossen(["192.168.1.5"], [frame])` (or `ry.BotOp(C, True)` launches it from the scene).
+When botop shuts down the arm goes idle (motors off) and falls if it is not resting:
+start and end in the rest pose (`-collect_robot` drives back to its start pose by itself).
+`tests/Trossen_test_botop.py`: keyboard IK teleop of the arm (r/f, w/s, a/d move the target, q quits).
+
+Scene (`scenes/trossen/trossen.yml`, view with `ry.Config().addFile('scenes/trossen/scene_init.yml')` and `C.view(True)`):
+* `kit/`: the Stationary AI kit on the workbench, from the 26-sgrl-hhi repo (leader meshes removed);
+  the right follower and both leaders are deleted, q = 6 arm joints + gripper (as the driver reports it)
+* `camera_0..2`: opened by serial, start poses from solvePnP of the table arucos in one image per camera
+  (camera_2 is mounted upside down); intrinsics in `cams_intrinsics.yml`
+* arucos: 7 on the table, 3 on the arm (35 mm black square)
+
+Extrinsics:
+```
+python3 main.py -setup trossen -collect_robot -sim -nposes 5   # simulated arm, rendered images -> data/trossen/robot_sim
+python3 main.py -setup trossen -collect_robot -nposes 30       # real arm (start in the rest pose, stand at the e-stop; 'q' stops)
+python3 main.py -setup trossen -extrinsic                      # cams + aruco positions (-joints 1: also joint offsets)
+python3 main.py -setup trossen -overlay                        # check: rendered scene over the undistorted images
+```
+Each pose shows a random arm aruco to a random camera (0.3-0.7 m in front of it, facing it, checked for occlusion in a
+rendering), keeps the arm 5 cm off the table and 12 cm off the cameras, and is reached on a collision-free KOMO path
+at `-max_vel` (default 0.3 rad/s). In simulation (30 poses), cams + aruco positions come out within 1-2 mm of the
+true camera positions, also with 5 mm errors in the hand-measured table arucos; calibrating joint offsets too is worse.
+
 
 ## KOMO Calibration Method (extinsic; jointly cams, arucos & joints via bundle adjustment)
 
