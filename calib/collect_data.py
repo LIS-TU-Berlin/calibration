@@ -8,6 +8,30 @@ import robotic as ry
 from .calibration_scene import CalibrationScene
 
 
+def fresh_images(bot, ncams, nframes=2, timeout=3.):
+    """the images of all cameras, each at least nframes new frames after this call (getImage returns a camera's
+    latest frame, which is old when its grabs stall -- e.g. with too little usbfs memory); None on timeout"""
+    last = [bot.getImage(f"camera_{c}") for c in range(ncams)]
+    count = [0] * ncams
+    t0 = time.time()
+    while min(count) < nframes:
+        if time.time() - t0 > timeout:
+            stalled = [f"camera_{c}" for c in range(ncams) if count[c] < nframes]
+            print(f"-- !! no new frames from {stalled} for {timeout}s: pose skipped "
+                  "(check: cat /sys/module/usbcore/parameters/usbfs_memory_mb, should be 1000)")
+            return None
+        time.sleep(.005)
+        for c in range(ncams):
+            if count[c] < nframes:
+                img = bot.getImage(f"camera_{c}")
+                if not np.array_equal(img, last[c]):  # sensor noise: a new frame always differs
+                    last[c] = img
+                    count[c] += 1
+    if time.time() - t0 > .5:
+        print(f"-- slow cameras: waited {time.time() - t0:.1f}s for new frames")
+    return last
+
+
 def collect_data(C: ry.Config, S: CalibrationScene, use_robot=False, data_path="data/", ncams=None, sim=False,
                  nposes=0, max_vel=.3):
     """use_robot: move the robot to random poses (franka: station; trossen: scene frame with a 'trossen' ip attribute)
@@ -97,14 +121,14 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_robot=False, data_path="
             bot.sound(12, 1.0)
             bot.sync(C, 0.0)
             q_now = bot.get_q()
-            Q.append(q_now)
 
             if sim:
                 rgbs = S.render_images(q_now)[:ncams]
             else:
-                rgbs = []
-                for c in range(ncams):
-                    rgbs.append(bot.getImage(f"camera_{c}"))
+                rgbs = fresh_images(bot, ncams)
+                if rgbs is None:  # a camera delivered no new frames: an old image would not match q_now
+                    continue
+            Q.append(q_now)
             rgb = np.hstack(rgbs)
             key = V.view(rgb, zoom=0.4)
 
