@@ -65,6 +65,9 @@ ar34(base): { Q: [.0, -.088 , .02 ,1., 0., 0., -1.], shape: quad, size: [.045, .
 ar40(base): { Q: [.102 , .175, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 40 }
 ar46(base): { Q: [-.057 , .109, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 46 }
 ar47(base): { Q: [-.108 , .223, .02 , 1., 0., 0., -1.], shape: quad, size: [.045, .045], aruco_id: 47 }
-ar41(cam_left_wrist): { Q: [.01 , .01, -.025 , 0., 1., 0., 0.], shape: quad, size: [.045, .045], aruco_id: 41 }
-ar45(follower_left_carriage_left_9): { Q: [.035 , -.021, .0 , 0.704416, 0.704416, -0.0616284, -0.0616284], shape: quad, size: [.045, .045], aruco_id: 45 }
-ar35(follower_left_link_5_6): { Q: [.0 , .0, .057 , 0., 0., 0., 1.], shape: quad, size: [.045, .045], aruco_id: 35 }
+ar41(cam_left_wrist): { Q: [.01 , .01, -.025 , 0, 0.999889, -0.014922, 0], shape: quad, size: [.045, .045], aruco_id: 41 }
+ar45(follower_left_carriage_left_9): { Q: [.035 , -.021, .0 , 0.704759, 0.704049, -0.065685, -0.057570], shape: quad, size: [.045, .045], aruco_id: 45 }
+# arm arucos: in-plane yaw measured from the images (PnP, 2026-11-10: ar35 5.7deg, ar41 1.7deg, ar45 0.7deg)
+# ar35 on the wrist housing's end cap: it does NOT turn with joint 4 -> parent is the frame before the joint
+# (same pose at q=0 as the former link_5_6 placement; joint_4_origin's z points the other way)
+ar35(follower_left_joint_4_origin): { Q: [0, 0, -.057, 0, 0.998767, -0.049634, 0], shape: quad, size: [.045, .045], aruco_id: 35 }

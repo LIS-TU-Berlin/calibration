@@ -13,6 +13,10 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_robot=False, data_path="
     """use_robot: move the robot to random poses (franka: station; trossen: scene frame with a 'trossen' ip attribute)
     sim: simulated robot, no cameras -- saves renderings instead; nposes: stop after that many (0: until 'q')"""
 
+    if os.path.isdir(data_path) and os.listdir(data_path):  # don't mix with an old run (load_images counts the files)
+        old = f"{data_path.rstrip('/')}_{time.strftime('%Y%m%d-%H%M%S')}"
+        os.rename(data_path, old)
+        print(f"-- moved the previous data to {old}")
     os.makedirs(data_path, exist_ok=True)
     ry.set_params({"botsim/verbose": 0, "bot/useAudio": True})
 
@@ -51,9 +55,10 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_robot=False, data_path="
                 print(f"-- pose {t}: {ar} -> {cam}")
                 bot.moveAutoTimed(path, max_vel, max_vel)
                 C.viewer().raiseWindow()
-                key = bot.wait(C)
-                if key == ord("q"):
-                    stop = True
+                while bot.getTimeToEnd() > 0:  # bot.wait also returns on any key: always finish the motion
+                    if bot.wait(C) == ord("q"):
+                        stop = True
+                if stop:
                     break
 
                 time.sleep(0.5)
@@ -115,6 +120,8 @@ def collect_data(C: ry.Config, S: CalibrationScene, use_robot=False, data_path="
 
         if use_robot and trossen:
             # back to the start (rest) pose: when botop shuts down, the trossen goes idle (motors off)
+            while bot.getTimeToEnd() > 0:
+                bot.sync(C, .1)
             q_now = bot.get_q()
             path, feasible = S.plan_path(q_now, q_start)
             if feasible:

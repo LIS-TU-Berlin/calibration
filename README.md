@@ -77,8 +77,24 @@ Extrinsics:
 python3 main.py -setup trossen -collect_robot -sim -nposes 5   # simulated arm, rendered images -> data/trossen/robot_sim
 python3 main.py -setup trossen -collect_robot -nposes 30       # real arm (start in the rest pose, stand at the e-stop; 'q' stops)
 python3 main.py -setup trossen -extrinsic                      # cams + aruco positions (-joints 1: also joint offsets)
-python3 main.py -setup trossen -overlay                        # check: rendered scene over the undistorted images
+python3 main.py -setup trossen -reproj                         # check: [real | sim | overlay] per image + pixel errors
 ```
+`-data <folder>` picks another dataset in `data/trossen/` (default `robot`); `-extrinsic` writes the result to
+`scenes/trossen/calib/` (used by `scene_calib.yml`) and keeps a copy in `<data>/calib/`. `-reproj` uses that copy
+(or `-calib <folder>`) and saves the rows to `<data>/reproj/` (`<data>/reproj_<other calib>/`):
+```
+python3 main.py -setup trossen -extrinsic -data robot_stripped -exclude 3 20                    # drop bad poses
+python3 main.py -setup trossen -reproj -data robot -calib data/trossen/robot_stripped/calib     # other data, same calib
+```
+Reading the result: komo's final f(x) is a sum over all residuals (not a mean), so it grows with the number of arm
+detections and cannot be compared across datasets; compare the per-camera / worst-detection pixel errors of `-reproj`
+instead. Table markers should be at 1-2 px; the arm markers are what fix the cameras relative to the robot.
+A pose whose arm markers are off by 100+ px in one camera only (while the others fit) was captured mid-motion
+or is otherwise broken: `-exclude` it.
+
+First Trossen calibration (2026-11-10, 30 poses, poses 3 and 20 excluded, f(x) 172): table 1.6 px, arm markers
+~10 px median (~5 mm at 0.5 m). ar35 was attached to the wrong link (it does not turn with joint 4) and dominated
+the earlier error; the arm markers' in-plane yaw was then measured from the images (0.7-5.7 deg, small effect).
 Each pose shows a random arm aruco to a random camera (0.3-0.7 m in front of it, facing it, checked for occlusion in a
 rendering), keeps the arm 5 cm off the table and 12 cm off the cameras, and is reached on a collision-free KOMO path
 at `-max_vel` (default 0.3 rad/s). In simulation (30 poses), cams + aruco positions come out within 1-2 mm of the
